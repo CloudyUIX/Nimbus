@@ -25,14 +25,23 @@ local function preloadImage(id)
 	local status = { Done = false, Loaded = false }
 	images[id] = status
 	task.spawn(function()
-		local ok = pcall(function()
-			ContentProvider:PreloadAsync({ id }, function(_, result)
-				status.Loaded = result == Enum.AssetFetchStatus.Success
+		-- use an image object so roblox loads it the same way as the banner
+		local image = Instance.new("ImageLabel")
+		image.Image = id
+		local ok, err = pcall(function()
+			ContentProvider:PreloadAsync({ image }, function(_, result)
+				if result == Enum.AssetFetchStatus.Success then
+					status.Loaded = true
+				end
 			end)
 		end)
+		status.Loaded = status.Loaded or image.IsLoaded
+		image:Destroy()
 		status.Done = true
-		if not ok or not status.Loaded then
-			warn("[RegionSystem] didnt preload banner " .. id)
+		if status.Loaded then
+			status.Loaded = true
+		else
+			warn("[RegionSystem] didnt preload banner " .. id .. ", trying it on the banner" .. (not ok and ": " .. tostring(err) or ""))
 		end
 	end)
 	return status
@@ -77,12 +86,8 @@ local function updateRegion()
 			return -- ur already somewhere else
 		end
 
-		local displayRegion = region
-		if status and not status.Loaded then
-			displayRegion = table.clone(region)
-			displayRegion.Image = "" -- still show the text if the image cant load in time
-		end
-		banner:Show(displayRegion)
+		-- keep the image even if preload fails, the banner can still load it normally
+		banner:Show(region)
 		shown[regionKey] = true
 		lastShown[regionKey] = os.clock()
 	end)
