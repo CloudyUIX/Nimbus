@@ -245,7 +245,7 @@ local function prepareVolume(volume)
 	volume.CanCollide = false
 	volume.CanTouch = false -- no touch listeners needed anymore
 	volume.CanQuery = true
-	volume.Transparency = 0.9
+	volume.Transparency = 1
 end
 
 function RegionService.Start()
